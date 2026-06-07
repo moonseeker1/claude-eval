@@ -7,6 +7,12 @@ tracked_tools:
   - "Grep"
   - "Glob"
 
+# 追踪特定 Bash 命令（glob 模糊匹配命令内容）
+tracked_bash_patterns:
+  - "ls *"                   # 匹配所有 ls 命令
+  - "cat *"                  # 匹配所有 cat 命令
+  - "py *"                   # 匹配所有 py 命令
+
 modes:
   - name: "skill"
     description: "使用 skill 触发"
