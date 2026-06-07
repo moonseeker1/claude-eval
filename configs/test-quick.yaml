@@ -1,0 +1,37 @@
+name: "快速测试"
+description: "最小化配置，验证框架端到端运行"
+
+tracked_tools:
+  - "Bash"
+  - "Read"
+  - "Grep"
+  - "Glob"
+
+modes:
+  - name: "skill"
+    description: "使用 skill 触发"
+    setup:
+      - "请列出当前目录下的所有文件"
+    turns:
+      - "这个项目里有哪些 Python 文件？"
+      - "读取 claude_eval/models.py 的前10行内容"
+
+  - name: "cli-no-init"
+    description: "CLI 无初始命令"
+    setup: []
+    turns:
+      - "这个项目里有哪些 Python 文件？"
+      - "读取 claude_eval/models.py 的前10行内容"
+
+  - name: "cli-with-init"
+    description: "CLI 有初始命令"
+    setup:
+      - "你是一个代码分析助手，请用工具来回答问题"
+    turns:
+      - "这个项目里有哪些 Python 文件？"
+      - "读取 claude_eval/models.py 的前10行内容"
+
+runs_per_mode: 2
+
+claude_args:
+  model: "claude-sonnet-4-6"

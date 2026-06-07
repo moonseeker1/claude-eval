@@ -1,0 +1,45 @@
+name: "知识库调用评估"
+description: "测试不同触发方式下知识库的调用情况"
+
+# 需要追踪的工具（支持通配符匹配）
+tracked_tools:
+  - "mcp__knowledge-base__*"     # 知识库相关 MCP 工具
+  - "Bash"
+  - "Read"
+  - "Grep"
+
+# 测试模式 — 每种模式的 turns 数量必须相同
+modes:
+  - name: "skill"
+    description: "使用 skill 触发知识库"
+    setup:
+      - "/knowledge-base 请加载知识库"
+    turns:
+      - "如何配置 API 密钥？"
+      - "部署流程是什么？"
+      - "错误码 E1001 怎么处理？"
+
+  - name: "cli-no-init"
+    description: "CLI 无初始命令"
+    setup: []
+    turns:
+      - "如何配置 API 密钥？"
+      - "部署流程是什么？"
+      - "错误码 E1001 怎么处理？"
+
+  - name: "cli-with-init"
+    description: "CLI 有初始命令"
+    setup:
+      - "在回答问题时，请始终先查询知识库获取最新信息"
+    turns:
+      - "如何配置 API 密钥？"
+      - "部署流程是什么？"
+      - "错误码 E1001 怎么处理？"
+
+# 每种模式重复运行的次数
+runs_per_mode: 3
+
+# Claude Code 运行参数
+claude_args:
+  model: "claude-sonnet-4-6"
+  # max_turns: 10
