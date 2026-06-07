@@ -30,6 +30,7 @@ class EvalConfig:
     name: str = "Untitled Eval"
     description: str = ""
     tracked_tools: list[str] = field(default_factory=list)
+    tracked_bash_patterns: list[str] = field(default_factory=list)
     modes: list[ModeConfig] = field(default_factory=list)
     runs_per_mode: int = 1
     claude_args: dict = field(default_factory=dict)
@@ -61,6 +62,23 @@ def tool_matches_pattern(tool_name: str, pattern: str) -> bool:
 def is_tool_tracked(tool_name: str, tracked_tools: list[str]) -> bool:
     """Check if a tool name matches any tracked tool pattern."""
     return any(fnmatch(tool_name, pattern) for pattern in tracked_tools)
+
+
+def bash_matches_patterns(command: str, patterns: list[str]) -> str | None:
+    """Check if a bash command matches any tracked pattern.
+
+    Returns the first matched pattern string, or None if no match.
+    Supports glob-style matching via fnmatch.
+    """
+    if not command or not patterns:
+        return None
+    for pattern in patterns:
+        try:
+            if fnmatch(command, pattern):
+                return pattern
+        except (TypeError, ValueError):
+            continue
+    return None
 
 
 def load_config(path: Path | str) -> EvalConfig:
@@ -104,6 +122,7 @@ def load_config(path: Path | str) -> EvalConfig:
         name=raw.get("name", "Untitled Eval"),
         description=raw.get("description", ""),
         tracked_tools=tracked,
+        tracked_bash_patterns=raw.get("tracked_bash_patterns", []),
         modes=modes,
         runs_per_mode=raw.get("runs_per_mode", 1),
         claude_args=raw.get("claude_args", {}),

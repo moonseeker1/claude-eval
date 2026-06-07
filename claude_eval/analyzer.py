@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import datetime, timezone
 
-from .config import is_tool_tracked
+from .config import bash_matches_patterns, is_tool_tracked
 from .models import (
     AnalysisReport,
     ModeStats,
@@ -22,6 +22,7 @@ class Analyzer:
         self,
         results: list[RunResult],
         tracked_tools: list[str],
+        tracked_bash_patterns: list[str] | None = None,
         config_name: str = "",
         config_description: str = "",
         model: str = "",
@@ -32,13 +33,16 @@ class Analyzer:
         Groups results by mode, then computes per-tool statistics
         filtered to tracked_tools patterns.
         """
+        self._bash_pattern_stats: dict[str, dict[str, ToolStats]] = {}
         mode_groups: dict[str, list[RunResult]] = defaultdict(list)
         for r in results:
             mode_groups[r.mode].append(r)
 
         mode_stats: dict[str, ModeStats] = {}
         for mode_name, mode_results in sorted(mode_groups.items()):
-            mode_stats[mode_name] = self._analyze_mode(mode_name, mode_results, tracked_tools)
+            mode_stats[mode_name] = self._analyze_mode(
+                mode_name, mode_results, tracked_tools, tracked_bash_patterns or []
+            )
 
         return AnalysisReport(
             config_name=config_name,
@@ -46,6 +50,8 @@ class Analyzer:
             model=model,
             runs_per_mode=runs_per_mode,
             tracked_tools=tracked_tools,
+            tracked_bash_patterns=tracked_bash_patterns or [],
+            bash_pattern_stats=self._bash_pattern_stats,
             mode_stats=mode_stats,
             raw_results=results,
             generated_at=datetime.now(timezone.utc).isoformat(),
@@ -56,20 +62,34 @@ class Analyzer:
         mode_name: str,
         results: list[RunResult],
         tracked_tools: list[str],
+        tracked_bash_patterns: list[str] = None,
     ) -> ModeStats:
         """Compute statistics for one mode across all its runs."""
         stats = ModeStats(mode_name=mode_name, runs_count=len(results))
+        bash_patterns = tracked_bash_patterns or []
 
         for result in results:
             stats.total_session_duration_ms += result.total_duration_ms
             for turn in result.turns:
                 for call in turn.tool_calls:
                     if is_tool_tracked(call.tool_name, tracked_tools):
-                        # Group by base tool name (strip parameterized suffixes)
                         tool_key = self._normalize_tool_name(call.tool_name)
                         if tool_key not in stats.tool_stats:
                             stats.tool_stats[tool_key] = ToolStats(tool_name=tool_key)
                         stats.tool_stats[tool_key].add_call(call)
+
+                    # Check bash command patterns
+                    if call.tool_name == "Bash" and bash_patterns:
+                        command = call.input.get("command", "")
+                        matched = bash_matches_patterns(command, bash_patterns)
+                        if matched:
+                            if mode_name not in self._bash_pattern_stats:
+                                self._bash_pattern_stats[mode_name] = {}
+                            if matched not in self._bash_pattern_stats[mode_name]:
+                                self._bash_pattern_stats[mode_name][matched] = ToolStats(
+                                    tool_name=matched
+                                )
+                            self._bash_pattern_stats[mode_name][matched].add_call(call)
 
         return stats
 

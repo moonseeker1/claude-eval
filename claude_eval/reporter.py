@@ -27,6 +27,7 @@ class Reporter:
             self._header(report),
             self._overview_table(report),
             self._tracked_tool_detail(report),
+            self._bash_pattern_section(report),
             self._per_turn_table(report),
             self._other_tools_table(report),
         ]
@@ -182,6 +183,55 @@ class Reporter:
             rows.append(f"| 第{turn_idx + 1}轮: \"{prompt[:30]}\" | " + " | ".join(cells) + " |")
 
         return "\n".join([lines[0], lines[1], header, sep] + rows)
+
+    def _bash_pattern_section(self, report: AnalysisReport) -> str:
+        """Bash command pattern matching statistics section."""
+        if not report.tracked_bash_patterns or not report.bash_pattern_stats:
+            return ""
+
+        modes = report.all_mode_names()
+        # Collect all matched patterns
+        all_patterns: list[str] = []
+        for mode_stats in report.bash_pattern_stats.values():
+            all_patterns.extend(mode_stats.keys())
+        all_patterns = sorted(set(all_patterns))
+
+        if not all_patterns:
+            return ""
+
+        lines = [
+            f"## Bash 命令匹配统计",
+            "",
+            f"匹配规则: {', '.join('`' + p + '`' for p in report.tracked_bash_patterns)}",
+            "",
+        ]
+
+        for pattern in all_patterns:
+            header = "| 模式 | 调用次数 | 成功 | 失败 | 成功率 | 平均耗时(ms) | 最小(ms) | 最大(ms) |"
+            sep = "|------|---------|------|------|--------|-------------|---------|---------|"
+            rows: list[str] = []
+
+            for mode_name in modes:
+                ms = report.bash_pattern_stats.get(mode_name, {})
+                ts = ms.get(pattern)
+                if ts:
+                    rows.append(
+                        f"| {mode_name} | {ts.total_calls} | {ts.success_count} "
+                        f"| {ts.error_count} | {ts.success_rate:.0%} "
+                        f"| {ts.avg_duration_ms:.0f} | {ts.min_duration_ms} "
+                        f"| {ts.max_duration_ms} |"
+                    )
+                else:
+                    rows.append(f"| {mode_name} | 0 | - | - | - | - | - | - |")
+
+            lines.append(f"### `{pattern}`")
+            lines.append("")
+            lines.append(header)
+            lines.append(sep)
+            lines.extend(rows)
+            lines.append("")
+
+        return "\n".join(lines)
 
     def _other_tools_table(self, report: AnalysisReport) -> str:
         """Statistics for non-tracked tools (auxiliary context)."""

@@ -190,6 +190,9 @@ class AnalysisReport:
     model: str = ""
     runs_per_mode: int = 0
     tracked_tools: list[str] = field(default_factory=list)
+    tracked_bash_patterns: list[str] = field(default_factory=list)
+    # {mode_name: {pattern: ToolStats}}
+    bash_pattern_stats: dict[str, dict[str, ToolStats]] = field(default_factory=dict)
     mode_stats: dict[str, ModeStats] = field(default_factory=dict)
     raw_results: list[RunResult] = field(default_factory=list)
     generated_at: str = ""

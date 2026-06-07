@@ -8,6 +8,13 @@ tracked_tools:
   - "Read"
   - "Grep"
 
+# 追踪特定 Bash 命令（glob 模糊匹配命令内容）
+# 仅对 tool_name 为 Bash 的调用生效
+tracked_bash_patterns:
+  - "*query_knowledge*"         # 匹配包含 query_knowledge 的命令
+  - "*npm install*"              # 匹配 npm install 开头的命令
+  - "git commit*"               # 匹配 git commit 开头的命令
+
 # 测试模式 — 每种模式的 turns 数量必须相同
 modes:
   - name: "skill"

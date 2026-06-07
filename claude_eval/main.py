@@ -30,6 +30,7 @@ def cmd_run(args: argparse.Namespace) -> None:
     report = analyzer.analyze(
         results=results,
         tracked_tools=config.tracked_tools,
+        tracked_bash_patterns=config.tracked_bash_patterns,
         config_name=config.name,
         config_description=config.description,
         model=config.model,
